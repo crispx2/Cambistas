@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tabela de Cambistas por Área</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    section {
+      margin-bottom: 40px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    tfoot td {
+      font-weight: bold;
+      background-color: #e0e0e0;
+    }
+    input, select {
+      padding: 6px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn-apagar {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    .btn-apagar:hover {
+      background-color: #c0392b;
+    }
+  </style>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<h1>Cadastro de Cambistas por Área</h1>
+
+<div>
+  <label>Área:
+    <select id="area">
+      <option value="Palmeira dos Índio">Palmeira dos Índio</option>
+      <option value="Maragogi">Maragogi</option>
+      <option value="Tamandaré">Tamandaré</option>
+    </select>
+  </label>
+
+  <label>Código: <input type="text" id="codigo" placeholder="Código do cambista" /></label>
+  <label>Nome: <input type="text" id="cambista" placeholder="Nome da cambista" /></label>
+  <label>Comissão (R$): <input type="number" id="comissao" placeholder="Valor da comissão" min="0" /></label>
+
+  <label>Valor Padrão (R$): <input type="number" id="valorPadrao" value="150" min="0" style="width: 80px;" /></label>
+
+  <button onclick="adicionarLinha()">Adicionar</button>
+  <form method="POST" action="/exportar-word">
+  <button type="submit">Exportar Tudo para Word</button>
+</form>
+
+</div>
+
+<hr>
+
+<section id="section-palmeira">
+  <h2>Palmeira dos Índio</h2>
+  <table id="tabela-palmeira">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Comissão (R$)</th>
+        <th>Falta (R$)</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot></tfoot>
+  </table>
+</section>
+
+<section id="section-maragogi">
+  <h2>Maragogi</h2>
+  <table id="tabela-maragogi">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Comissão (R$)</th>
+        <th>Falta (R$)</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot></tfoot>
+  </table>
+</section>
+
+<section id="section-tamandare">
+  <h2>Tamandaré</h2>
+  <table id="tabela-tamandare">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nome</th>
+        <th>Comissão (R$)</th>
+        <th>Falta (R$)</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot></tfoot>
+  </table>
+</section>
+
+<script>
+  async function adicionarLinha() {
+    const area = document.getElementById('area').value.;
+    const codigo = document.getElementById('codigo').value.trim();
+    const cambista = document.getElementById('cambista').value.trim();
+    const comissao = parseFloat(document.getElementById('comissao').value);
+    const valorPadraoInput = parseFloat(document.getElementById('valorPadrao').value);
+    const valorPadrao = isNaN(valorPadraoInput) ? 150 : valorPadraoInput;
+
+    if (!codigo || !cambista) {
+      alert('Preencha o código e o nome do cambista.');
+      return;
+    }
+
+    if (isNaN(comissao) || comissao < 0) {
+      alert('Informe um valor válido para a comissão (não negativo).');
+      return;
+    }
+
+    const falta = valorPadrao - comissao;
+
+    const data = { area, codigo, cambista, comissao, falta };
+
+    await fetch('/adicionar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    limparCampos();
+    carregarTabela();
+  }
+
+  async function apagarLinha(index) {
+    const confirmacao = confirm('Tem certeza que deseja apagar esta linha?');
+    if (!confirmacao) return;
+
+    const res = await fetch(`/apagar/${index}`, { method: 'DELETE' });
+    if (res.ok) {
+      carregarTabela();
+    } else {
+      alert('Erro ao apagar a linha.');
+    }
+  }
+
+  async function carregarTabela() {
+    const res = await fetch('/dados');
+    const dados = await res.json();
+
+    ['palmeira', 'maragogi', 'tamandare'].forEach((nome) => {
+      document.querySelector(`#tabela-${nome} tbody`).innerHTML = '';
+      document.querySelector(`#tabela-${nome} tfoot`).innerHTML = '';
+    });
+
+    const areaToId = {
+      'Palmeira dos Índio': 'palmeira',
+      'Maragogi': 'maragogi',
+      'Tamandaré': 'tamandare',
+    };
+
+    const dadosPorArea = {
+      'Palmeira dos Índio': [],
+      'Maragogi': [],
+      'Tamandaré': [],
+    };
+
+    dados.forEach((dado, index) => {
+      if (dadosPorArea[dado.area]) {
+        dado._index = index;
+        dadosPorArea[dado.area].push(dado);
+      }
+    });
+
+    Object.entries(dadosPorArea).forEach(([area, lista]) => {
+      const idTabela = areaToId[area];
+      const tbody = document.querySelector(`#tabela-${idTabela} tbody`);
+      const tfoot = document.querySelector(`#tabela-${idTabela} tfoot`);
+
+      let totalComissao = 0, totalFalta = 0;
+
+      lista.forEach((dado) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${dado.codigo}</td>
+          <td>${dado.cambista}</td>
+          <td>R$ ${parseFloat(dado.comissao).toFixed(2)}</td>
+          <td>R$ ${parseFloat(dado.falta).toFixed(2)}</td>
+          <td><button class="btn-apagar" onclick="apagarLinha(${dado._index})">Apagar</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        totalComissao += parseFloat(dado.comissao);
+        totalFalta += parseFloat(dado.falta);
+      });
+
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="2">Totais</td>
+          <td>R$ ${totalComissao.toFixed(2)}</td>
+          <td>R$ ${totalFalta.toFixed(2)}</td>
+          <td></td>
+        </tr>
+      `;
+    });
+  }
+
+  function limparCampos() {
+    document.getElementById('codigo').value = '';
+    document.getElementById('cambista').value = '';
+    document.getElementById('comissao').value = '';
+  }
+
+  function exportarTudoExcel() {
+    const wb = XLSX.utils.book_new();
+
+    ['palmeira', 'maragogi', 'tamandare'].forEach((nome) => {
+      const tabela = document.getElementById(`tabela-${nome}`);
+      const ws = XLSX.utils.table_to_sheet(tabela);
+      XLSX.utils.book_append_sheet(wb, ws, tabela.previousElementSibling.textContent.trim());
+    });
+
+    XLSX.writeFile(wb, 'Cambistas_Por_Area.xlsx');
+  }
+
+  carregarTabela();
+</script>
+
+</body>
+</html>
