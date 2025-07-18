@@ -6,9 +6,16 @@ app = Flask(__name__)
 
 data_store = []
 
+# Página inicial para seleção
 @app.route('/')
-def index():
-    return render_template('index.html')
+def selecao():
+    return render_template('selecao.html')
+
+# Página principal que recebe o modo escolhido via query string
+@app.route('/principal')
+def principal():
+    modo = request.args.get('modo', 'comissao')  # default para comissão
+    return render_template('index.html', modo=modo)
 
 @app.route('/adicionar', methods=['POST'])
 def adicionar():
