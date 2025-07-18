@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
+from docx import Document
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -26,11 +28,6 @@ def apagar(index):
     except IndexError:
         return jsonify({'status': 'error', 'message': 'Índice inválido'}), 400
 
-from flask import send_file
-from docx import Document
-from docx.shared import Pt
-from io import BytesIO
-
 @app.route('/exportar-word', methods=['POST'])
 def exportar_word():
     doc = Document()
@@ -52,18 +49,17 @@ def exportar_word():
         hdr_cells[0].text = 'Código'
         hdr_cells[1].text = 'Cambista'
         hdr_cells[2].text = 'Comissão (R$)'
-        hdr_cells[3].text = 'Falta (R$)'
+        hdr_cells[3].text = 'Complemento de Dezena (R$)'
 
         for item in tabela_area:
             row_cells = table.add_row().cells
             row_cells[0].text = str(item.get('codigo', ''))
             row_cells[1].text = str(item.get('cambista', ''))
             row_cells[2].text = f"R$ {float(item.get('comissao', 0)):,.2f}"
-            row_cells[3].text = f"R$ {float(item.get('falta', 0)):,.2f}"
+            row_cells[3].text = f"R$ {float(item.get('Complemento_De_Dezena', 0)):,.2f}"
 
         doc.add_paragraph('')  # espaço entre áreas
 
-    # Salvar em memória
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
