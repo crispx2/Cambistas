@@ -77,9 +77,9 @@
   <label>Valor Padrão (R$): <input type="number" id="valorPadrao" value="150" min="0" style="width: 80px;" /></label>
 
   <button onclick="adicionarLinha()">Adicionar</button>
-  <form method="POST" action="/exportar-word">
-  <button type="submit">Exportar Tudo para Word</button>
-</form>
+  <form method="POST" action="/exportar-word" style="display:inline;">
+    <button type="submit">Exportar Tudo para Word</button>
+  </form>
 
 </div>
 
@@ -93,7 +93,7 @@
         <th>Código</th>
         <th>Nome</th>
         <th>Comissão (R$)</th>
-        <th>Falta (R$)</th>
+        <th>Complemento De Dezena (R$)</th>
         <th>Ação</th>
       </tr>
     </thead>
@@ -110,7 +110,7 @@
         <th>Código</th>
         <th>Nome</th>
         <th>Comissão (R$)</th>
-        <th>Falta (R$)</th>
+        <th>Complemento De Dezena (R$)</th>
         <th>Ação</th>
       </tr>
     </thead>
@@ -127,7 +127,7 @@
         <th>Código</th>
         <th>Nome</th>
         <th>Comissão (R$)</th>
-        <th>Falta (R$)</th>
+        <th>Complemento De Dezena (R$)</th>
         <th>Ação</th>
       </tr>
     </thead>
@@ -138,7 +138,7 @@
 
 <script>
   async function adicionarLinha() {
-    const area = document.getElementById('area').value.;
+    const area = document.getElementById('area').value;
     const codigo = document.getElementById('codigo').value.trim();
     const cambista = document.getElementById('cambista').value.trim();
     const comissao = parseFloat(document.getElementById('comissao').value);
@@ -155,9 +155,9 @@
       return;
     }
 
-    const falta = valorPadrao - comissao;
+    const Complemento_De_Dezena = valorPadrao - comissao;
 
-    const data = { area, codigo, cambista, comissao, falta };
+    const data = { area, codigo, cambista, comissao, Complemento_De_Dezena };
 
     await fetch('/adicionar', {
       method: 'POST',
@@ -214,7 +214,7 @@
       const tbody = document.querySelector(`#tabela-${idTabela} tbody`);
       const tfoot = document.querySelector(`#tabela-${idTabela} tfoot`);
 
-      let totalComissao = 0, totalFalta = 0;
+      let totalComissao = 0, totalComplementoDeDezena = 0;
 
       lista.forEach((dado) => {
         const tr = document.createElement('tr');
@@ -222,20 +222,20 @@
           <td>${dado.codigo}</td>
           <td>${dado.cambista}</td>
           <td>R$ ${parseFloat(dado.comissao).toFixed(2)}</td>
-          <td>R$ ${parseFloat(dado.falta).toFixed(2)}</td>
+          <td>R$ ${parseFloat(dado.Complemento_De_Dezena).toFixed(2)}</td>
           <td><button class="btn-apagar" onclick="apagarLinha(${dado._index})">Apagar</button></td>
         `;
         tbody.appendChild(tr);
 
         totalComissao += parseFloat(dado.comissao);
-        totalFalta += parseFloat(dado.falta);
+        totalComplementoDeDezena += parseFloat(dado.Complemento_De_Dezena);
       });
 
       tfoot.innerHTML = `
         <tr>
           <td colspan="2">Totais</td>
           <td>R$ ${totalComissao.toFixed(2)}</td>
-          <td>R$ ${totalFalta.toFixed(2)}</td>
+          <td>R$ ${totalComplementoDeDezena.toFixed(2)}</td>
           <td></td>
         </tr>
       `;
