@@ -3,6 +3,7 @@ from docx import Document
 from io import BytesIO
 
 app = Flask(__name__)
+# Forçar novo build
 
 data_store = []
 
